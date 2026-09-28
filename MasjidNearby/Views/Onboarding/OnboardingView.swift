@@ -16,12 +16,12 @@ struct OnboardingView: View {
 
             #if DEBUG
             VStack(spacing: 12) {
-                Button("Continue as User (mock)") {
+                Button("Continue as User") {
                     Task { await coordinator.debugSignIn(as: .user) }
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("Continue as Masjid Admin (mock)") {
+                Button("Continue as Masjid Admin") {
                     Task { await coordinator.debugSignIn(as: .masjidAdmin) }
                 }
                 .buttonStyle(.bordered)
