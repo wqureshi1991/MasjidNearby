@@ -1,0 +1,7 @@
+.DS_Store
+xcuserdata/
+DerivedData/
+*.xcuserstate
+build/
+# Firebase config is per-environment; keep it out of git
+GoogleService-Info*.plist
