@@ -3,7 +3,7 @@ import OSLog
 
 enum AppFlow {
     case launching
-    case onboarding
+    case onboarding(OnboardingCoordinator)
     case user(UserCoordinator)
     case masjidAdmin(MasjidAdminCoordinator)
 }
@@ -42,19 +42,12 @@ final class AppCoordinator {
         }
     }
 
-    #if DEBUG
-    /// Temporary until Phase 3 adds real sign-in screens.
-    func debugSignIn(as role: UserRole) async {
-        guard let mock = dependencies.authService as? MockAuthService else { return }
-        await mock.signIn(as: role)
-    }
-    #endif
-
     private func apply(_ state: AuthState) {
         switch state {
         case .signedOut:
             currentSession = nil
-            flow = .onboarding
+            if case .onboarding = flow { return }
+            flow = .onboarding(OnboardingCoordinator(authService: dependencies.authService))
         case .signedIn(let session):
             guard session != currentSession else { return }
             currentSession = session

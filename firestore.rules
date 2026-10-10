@@ -1,0 +1,38 @@
+rules_version = '2';
+
+// Deploy with `firebase deploy --only firestore:rules`, or paste into
+// Firebase console → Firestore Database → Rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // One profile per account, holding its role. Guests (anonymous) have no profile.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && request.auth.token.firebase.sign_in_provider != 'anonymous'
+        && request.resource.data.keys().hasOnly(['role', 'createdAt'])
+        && request.resource.data.role in ['user', 'masjidAdmin']
+        && request.resource.data.createdAt == request.time;
+
+      // The role can never change after sign-up.
+      allow update: if isOwner(uid)
+        && request.resource.data.role == resource.data.role;
+
+      allow delete: if false;
+    }
+
+    // Everything else is closed until its phase adds rules.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

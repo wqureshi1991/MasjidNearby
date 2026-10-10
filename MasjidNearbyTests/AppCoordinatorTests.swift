@@ -24,6 +24,20 @@ struct AppCoordinatorTests {
         #expect(reached)
     }
 
+    @Test func guestShowsUserFlow() async throws {
+        let auth = MockAuthService()
+        let coordinator = AppCoordinator(dependencies: AppDependencies(authService: auth))
+        let task = Task { await coordinator.start() }
+        defer { task.cancel() }
+
+        try await auth.continueAsGuest()
+
+        let reached = await waitUntil {
+            if case .user(let userCoordinator) = coordinator.flow { userCoordinator.session.isGuest } else { false }
+        }
+        #expect(reached)
+    }
+
     @Test func adminSignOutReturnsToOnboarding() async {
         let auth = MockAuthService(initialState: .signedIn(AuthSession(userID: "a1", role: .masjidAdmin)))
         let coordinator = AppCoordinator(dependencies: AppDependencies(authService: auth))
@@ -37,6 +51,25 @@ struct AppCoordinatorTests {
 
         let showedOnboarding = await waitUntil { if case .onboarding = coordinator.flow { true } else { false } }
         #expect(showedOnboarding)
+    }
+
+    @Test func onboardingNavigationPushesRoutes() {
+        let onboarding = OnboardingCoordinator(authService: MockAuthService())
+
+        onboarding.makeWelcomeViewModel().signIn(as: .masjidAdmin)
+        #expect(onboarding.path == [.signIn(.masjidAdmin)])
+
+        onboarding.makeSignInViewModel(role: .masjidAdmin).createAccount()
+        #expect(onboarding.path == [.signIn(.masjidAdmin), .signUp(.masjidAdmin)])
+
+        onboarding.goBack()
+        let signIn = onboarding.makeSignInViewModel(role: .masjidAdmin)
+        signIn.email = "imam@example.com"
+        signIn.forgotPassword()
+        #expect(onboarding.path == [.signIn(.masjidAdmin), .resetPassword(email: "imam@example.com")])
+
+        onboarding.makePasswordResetViewModel(email: "imam@example.com").done()
+        #expect(onboarding.path == [.signIn(.masjidAdmin)])
     }
 
     /// Polls `condition` on the main actor until it passes or the timeout elapses.

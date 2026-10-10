@@ -5,8 +5,12 @@ import Foundation
 struct AppDependencies: Sendable {
     let authService: any AuthService
 
-    /// Phase 3 replaces `MockAuthService` with the live Firebase implementation.
-    static func makeDefault() -> AppDependencies {
-        AppDependencies(authService: MockAuthService())
+    static func makeDefault(firebaseConfigured: Bool) -> AppDependencies {
+        guard firebaseConfigured else {
+            return AppDependencies(authService: MockAuthService())
+        }
+        return AppDependencies(
+            authService: LiveAuthService(backend: FirebaseAuthBackend(), profiles: FirestoreUserProfileStore())
+        )
     }
 }
