@@ -13,6 +13,19 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isMasjidAdminAccount() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'masjidAdmin';
+    }
+
+    function adminsOf(masjidID) {
+      return get(/databases/$(database)/documents/masjids/$(masjidID)).data.adminUIDs;
+    }
+
+    function isTime(value) {
+      return value is string && value.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$');
+    }
+
     // One profile per account, holding its role. Guests (anonymous) have no profile.
     match /users/{uid} {
       allow read: if isOwner(uid);
@@ -28,6 +41,50 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role;
 
       allow delete: if false;
+    }
+
+    match /masjids/{masjidID} {
+      // Anyone can see verified masjids; admins can always see their own.
+      allow read: if resource.data.verified == true
+        || (isSignedIn() && request.auth.uid in resource.data.adminUIDs);
+
+      // A masjid admin account registers a masjid as its only admin, unverified.
+      allow create: if isMasjidAdminAccount()
+        && request.resource.data.adminUIDs == [request.auth.uid]
+        && request.resource.data.verified == false
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.latitude is number && request.resource.data.longitude is number
+        && request.resource.data.geohash is string
+        && request.resource.data.timeZone is string
+        && request.resource.data.createdAt == request.time;
+
+      // Admins edit details but can't change who the admins are, or verify themselves.
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.adminUIDs
+        && request.resource.data.adminUIDs == resource.data.adminUIDs
+        && request.resource.data.verified == resource.data.verified
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if false;
+
+      // One document per day, ID yyyy-MM-dd.
+      match /schedule/{day} {
+        allow read: if get(/databases/$(database)/documents/masjids/$(masjidID)).data.verified == true
+          || (isSignedIn() && request.auth.uid in adminsOf(masjidID));
+
+        allow create, update: if isSignedIn()
+          && request.auth.uid in adminsOf(masjidID)
+          && request.resource.data.day == day
+          && request.resource.data.source in ['manual', 'ocr']
+          && isTime(request.resource.data.sunrise)
+          && isTime(request.resource.data.fajr.adhan)
+          && isTime(request.resource.data.dhuhr.adhan)
+          && isTime(request.resource.data.asr.adhan)
+          && isTime(request.resource.data.maghrib.adhan)
+          && isTime(request.resource.data.isha.adhan);
+
+        allow delete: if isSignedIn() && request.auth.uid in adminsOf(masjidID);
+      }
     }
 
     // Everything else is closed until its phase adds rules.

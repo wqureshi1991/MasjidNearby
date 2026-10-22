@@ -30,7 +30,30 @@ struct WallClockTime: Sendable, Hashable, Comparable, CustomStringConvertible {
         minute = wrapped % 60
     }
 
+    /// The wall-clock time `date` shows in `timeZone`, truncated to the minute.
+    init(date: Date, in timeZone: TimeZone) {
+        let localSeconds = date.timeIntervalSince1970 + Double(timeZone.secondsFromGMT(for: date))
+        let minutes = Int((localSeconds / 60).rounded(.down))
+        self.init(wrappingMinutesSinceMidnight: minutes % 1_440)
+    }
+
     var minutesSinceMidnight: Int { hour * 60 + minute }
+
+    /// Minutes from `self` forward to `later`, wrapping past midnight: 23:50 → 00:10 is 20.
+    func minutes(until later: WallClockTime) -> Int {
+        ((later.minutesSinceMidnight - minutesSinceMidnight) % 1_440 + 1_440) % 1_440
+    }
+
+    func adding(minutes: Int) -> WallClockTime {
+        WallClockTime(wrappingMinutesSinceMidnight: minutesSinceMidnight + minutes)
+    }
+
+    /// A `Date` for driving a time-only picker: this time on a fixed day with no DST change.
+    func pickerDate(in timeZone: TimeZone) -> Date {
+        // 2001-01-01.
+        let referenceDay = CalendarDay(julianDayNumber: 2_451_911)
+        return date(on: referenceDay, in: timeZone) ?? referenceDay.startOfDayUTC
+    }
 
     /// "HH:mm". This is the stored format.
     var description: String {
