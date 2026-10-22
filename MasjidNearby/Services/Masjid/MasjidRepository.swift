@@ -11,6 +11,9 @@ protocol MasjidRepository: Sendable {
     /// Saves `draft` over `masjid`'s editable details. Admins and verification are unchanged.
     func updateMasjid(_ masjid: Masjid, with draft: MasjidDraft) async throws -> Masjid
 
+    /// Verified masjids within `radiusMeters` of `center`, nearest first.
+    func verifiedMasjids(near center: Coordinates, radiusMeters: Double) async throws -> [Masjid]
+
     /// Published days from `start` through `end`, inclusive.
     func schedule(masjidID: String, from start: CalendarDay, through end: CalendarDay) async throws -> [DailyPrayerTimes]
 

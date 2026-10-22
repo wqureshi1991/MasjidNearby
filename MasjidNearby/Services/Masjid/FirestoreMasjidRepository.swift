@@ -59,6 +59,30 @@ struct FirestoreMasjidRepository: MasjidRepository {
         return updated
     }
 
+    func verifiedMasjids(near center: Coordinates, radiusMeters: Double) async throws -> [Masjid] {
+        // Query the geohash cell around the point and its neighbours, then filter by real distance.
+        let prefixes = Geohash.coveringPrefixes(around: center, radiusMeters: radiusMeters)
+        let candidates = try await withThrowingTaskGroup(of: [Masjid].self, returning: [Masjid].self) { group in
+            for prefix in prefixes {
+                group.addTask {
+                    try await Self.verifiedMasjids(withGeohashPrefix: prefix)
+                }
+            }
+            var unique: [String: Masjid] = [:]
+            for try await batch in group {
+                for masjid in batch {
+                    unique[masjid.id] = masjid
+                }
+            }
+            return Array(unique.values)
+        }
+        return candidates
+            .map { (masjid: $0, distance: $0.coordinates.distance(to: center)) }
+            .filter { $0.distance <= radiusMeters }
+            .sorted { $0.distance < $1.distance }
+            .map { $0.masjid }
+    }
+
     func schedule(masjidID: String, from start: CalendarDay, through end: CalendarDay) async throws -> [DailyPrayerTimes] {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[DailyPrayerTimes], any Error>) in
             Self.schedule(of: masjidID)
@@ -104,6 +128,32 @@ struct FirestoreMasjidRepository: MasjidRepository {
 
     private static func schedule(of masjidID: String) -> CollectionReference {
         masjids.document(masjidID).collection("schedule")
+    }
+
+    private static func verifiedMasjids(withGeohashPrefix prefix: String) async throws -> [Masjid] {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Masjid], any Error>) in
+            masjids
+                .whereField(MasjidDTO.Key.verified, isEqualTo: true)
+                .whereField(MasjidDTO.Key.geohash, isGreaterThanOrEqualTo: prefix)
+                // "~" sorts after every geohash character, so this is "starts with prefix".
+                .whereField(MasjidDTO.Key.geohash, isLessThanOrEqualTo: prefix + "~")
+                .getDocuments { snapshot, error in
+                    if let error {
+                        continuation.resume(throwing: Self.map(error))
+                        return
+                    }
+                    var found: [Masjid] = []
+                    for document in snapshot?.documents ?? [] {
+                        do {
+                            found.append(try MasjidDTO.masjid(id: document.documentID, data: document.data()))
+                        } catch {
+                            // One malformed masjid shouldn't hide the others.
+                            Self.logger.error("Skipping masjid \(document.documentID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                        }
+                    }
+                    continuation.resume(returning: found)
+                }
+        }
     }
 
     private static func creationData(for masjid: Masjid, adminUID: String) -> [String: Any] {

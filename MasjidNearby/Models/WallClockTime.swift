@@ -48,6 +48,16 @@ struct WallClockTime: Sendable, Hashable, Comparable, CustomStringConvertible {
         WallClockTime(wrappingMinutesSinceMidnight: minutesSinceMidnight + minutes)
     }
 
+    /// Like `date(on:in:)`, but never nil: a time inside a DST spring-forward gap
+    /// resolves using the UTC offset in force around it.
+    func instant(on day: CalendarDay, in timeZone: TimeZone) -> Date {
+        if let date = date(on: day, in: timeZone) {
+            return date
+        }
+        let naive = day.startOfDayUTC.addingTimeInterval(Double(minutesSinceMidnight * 60))
+        return naive.addingTimeInterval(-Double(timeZone.secondsFromGMT(for: naive)))
+    }
+
     /// A `Date` for driving a time-only picker: this time on a fixed day with no DST change.
     func pickerDate(in timeZone: TimeZone) -> Date {
         // 2001-01-01.

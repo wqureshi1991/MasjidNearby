@@ -5,26 +5,21 @@ struct UserFlowView: View {
 
     var body: some View {
         NavigationStack(path: $coordinator.path) {
-            List {
-                Section("Nearby") {
-                    Button("Sample Masjid") {
-                        coordinator.showMasjidDetail(masjidID: "sample")
+            NearbyMasjidsView(viewModel: coordinator.nearby)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(coordinator.session.isGuest ? "Exit" : "Sign Out") {
+                            Task { await coordinator.signOut() }
+                        }
                     }
                 }
-            }
-            .navigationTitle("Masjids")
-            .toolbar {
-                Button("Sign Out") {
-                    Task { await coordinator.signOut() }
+                .navigationDestination(for: UserCoordinator.Route.self) { route in
+                    switch route {
+                    case .masjidDetail(let masjid, let distanceMeters):
+                        MasjidDetailView(viewModel: coordinator.makeDetailViewModel(masjid: masjid,
+                                                                                    distanceMeters: distanceMeters))
+                    }
                 }
-            }
-            .navigationDestination(for: UserCoordinator.Route.self) { route in
-                switch route {
-                case .masjidDetail(let masjidID):
-                    Text("Masjid \(masjidID)")
-                        .navigationTitle("Prayer Times")
-                }
-            }
         }
     }
 }

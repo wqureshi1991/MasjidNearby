@@ -8,12 +8,15 @@ actor MockMasjidRepository: MasjidRepository {
     private var nextError: RepositoryError?
     private(set) var publishCallCount = 0
 
-    init(masjids: [Masjid] = [], adminUID: String? = nil) {
+    init(masjids: [Masjid] = [], adminUID: String? = nil, published: [String: [DailyPrayerTimes]] = [:]) {
         for masjid in masjids {
             self.masjids[masjid.id] = masjid
             if let adminUID {
                 admins[masjid.id] = adminUID
             }
+        }
+        for (masjidID, days) in published {
+            schedules[masjidID] = Dictionary(days.map { ($0.day, $0) }, uniquingKeysWith: { _, latest in latest })
         }
     }
 
@@ -41,6 +44,13 @@ actor MockMasjidRepository: MasjidRepository {
         }
         masjids[masjid.id] = updated
         return updated
+    }
+
+    func verifiedMasjids(near center: Coordinates, radiusMeters: Double) throws -> [Masjid] {
+        try throwInjectedError()
+        return masjids.values
+            .filter { $0.isVerified && $0.coordinates.distance(to: center) <= radiusMeters }
+            .sorted { $0.coordinates.distance(to: center) < $1.coordinates.distance(to: center) }
     }
 
     func schedule(masjidID: String, from start: CalendarDay, through end: CalendarDay) throws -> [DailyPrayerTimes] {
