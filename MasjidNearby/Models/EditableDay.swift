@@ -43,8 +43,29 @@ struct EditableDay: Sendable, Equatable {
         isha = EditablePrayer(times.isha)
     }
 
+    subscript(prayer: Prayer) -> EditablePrayer {
+        get {
+            switch prayer {
+            case .fajr: fajr
+            case .dhuhr: dhuhr
+            case .asr: asr
+            case .maghrib: maghrib
+            case .isha: isha
+            }
+        }
+        set {
+            switch prayer {
+            case .fajr: fajr = newValue
+            case .dhuhr: dhuhr = newValue
+            case .asr: asr = newValue
+            case .maghrib: maghrib = newValue
+            case .isha: isha = newValue
+            }
+        }
+    }
+
     /// The times a masjid publishes for `day`.
-    func dailyTimes(on day: CalendarDay) -> DailyPrayerTimes {
+    func dailyTimes(on day: CalendarDay, source: PrayerTimeSource = .manual) -> DailyPrayerTimes {
         DailyPrayerTimes(
             day: day,
             fajr: fajr.prayerTime,
@@ -53,7 +74,7 @@ struct EditableDay: Sendable, Equatable {
             asr: asr.prayerTime,
             maghrib: maghrib.prayerTime,
             isha: isha.prayerTime,
-            source: .manual
+            source: source
         )
     }
 }

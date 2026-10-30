@@ -8,6 +8,7 @@ final class MasjidAdminCoordinator {
         case registerMasjid
         case editMasjid(Masjid)
         case schedule(Masjid)
+        case scanTimetable(Masjid)
     }
 
     var path: [Route] = []
@@ -32,6 +33,9 @@ final class MasjidAdminCoordinator {
         home.onEditSchedule = { [weak self] masjid in
             self?.path.append(.schedule(masjid))
         }
+        home.onScanTimetable = { [weak self] masjid in
+            self?.path.append(.scanTimetable(masjid))
+        }
     }
 
     func signOut() async {
@@ -54,6 +58,19 @@ final class MasjidAdminCoordinator {
             repository: dependencies.masjidRepository,
             calculator: dependencies.prayerTimeCalculator
         )
+    }
+
+    func makeTimetableScanViewModel(for masjid: Masjid) -> TimetableScanViewModel {
+        let viewModel = TimetableScanViewModel(
+            masjid: masjid,
+            repository: dependencies.masjidRepository,
+            calculator: dependencies.prayerTimeCalculator,
+            recognizer: dependencies.textRecognizer
+        )
+        viewModel.onFinished = { [weak self] in
+            self?.path.removeAll()
+        }
+        return viewModel
     }
 
     // MARK: - Private

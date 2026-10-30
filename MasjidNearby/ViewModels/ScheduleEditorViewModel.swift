@@ -181,7 +181,9 @@ final class ScheduleEditorViewModel {
         published[day] ?? Self.calculatedTimes(on: day, masjid: masjid, timeZone: timeZone, calculator: calculator)
     }
 
-    private static func calculatedTimes(on day: CalendarDay,
+    /// Calculated times for `day`, or a plain template at polar latitudes. Also the
+    /// starting point for scanned timetables.
+    static func calculatedTimes(on day: CalendarDay,
                                         masjid: Masjid,
                                         timeZone: TimeZone,
                                         calculator: any PrayerTimeCalculator) -> DailyPrayerTimes {

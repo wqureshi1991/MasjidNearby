@@ -44,6 +44,9 @@ struct AdminHomeView: View {
                     Button("Edit Prayer Times") {
                         viewModel.editSchedule()
                     }
+                    Button("Scan Printed Timetable") {
+                        viewModel.scanTimetable()
+                    }
                     Button("Edit Masjid Details") {
                         viewModel.editDetails()
                     }

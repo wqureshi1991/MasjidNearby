@@ -9,19 +9,22 @@ struct AppDependencies: Sendable {
     let locationService: any LocationService
     let prayerTimeCalculator: any PrayerTimeCalculator
     let offlineStore: any OfflineStore
+    let textRecognizer: any TextRecognizer
 
     init(authService: any AuthService,
          masjidRepository: any MasjidRepository = MockMasjidRepository(),
          addressSearch: any AddressSearchService = MockAddressSearchService(),
          locationService: any LocationService = MockLocationService(),
          prayerTimeCalculator: any PrayerTimeCalculator = AstronomicalPrayerTimeCalculator(),
-         offlineStore: any OfflineStore = InMemoryOfflineStore()) {
+         offlineStore: any OfflineStore = InMemoryOfflineStore(),
+         textRecognizer: any TextRecognizer = VisionTextRecognizer()) {
         self.authService = authService
         self.masjidRepository = masjidRepository
         self.addressSearch = addressSearch
         self.locationService = locationService
         self.prayerTimeCalculator = prayerTimeCalculator
         self.offlineStore = offlineStore
+        self.textRecognizer = textRecognizer
     }
 
     @MainActor

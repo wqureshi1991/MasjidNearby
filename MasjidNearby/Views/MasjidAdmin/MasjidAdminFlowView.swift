@@ -19,6 +19,8 @@ struct MasjidAdminFlowView: View {
                         MasjidFormView(viewModel: coordinator.makeEditViewModel(for: masjid))
                     case .schedule(let masjid):
                         ScheduleEditorView(viewModel: coordinator.makeScheduleEditorViewModel(for: masjid))
+                    case .scanTimetable(let masjid):
+                        TimetableScanView(viewModel: coordinator.makeTimetableScanViewModel(for: masjid))
                     }
                 }
         }

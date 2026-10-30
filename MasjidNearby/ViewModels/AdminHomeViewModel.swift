@@ -10,6 +10,7 @@ final class AdminHomeViewModel {
     @ObservationIgnored var onRegister: (@MainActor () -> Void)?
     @ObservationIgnored var onEditDetails: (@MainActor (Masjid) -> Void)?
     @ObservationIgnored var onEditSchedule: (@MainActor (Masjid) -> Void)?
+    @ObservationIgnored var onScanTimetable: (@MainActor (Masjid) -> Void)?
 
     private let adminUID: String
     private let repository: any MasjidRepository
@@ -56,5 +57,10 @@ final class AdminHomeViewModel {
     func editSchedule() {
         guard let masjid else { return }
         onEditSchedule?(masjid)
+    }
+
+    func scanTimetable() {
+        guard let masjid else { return }
+        onScanTimetable?(masjid)
     }
 }
