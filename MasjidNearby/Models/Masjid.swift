@@ -10,7 +10,7 @@ struct JumuahSlot: Sendable, Hashable, Codable {
     }
 }
 
-struct Masjid: Sendable, Hashable, Identifiable {
+struct Masjid: Sendable, Hashable, Identifiable, Codable {
     let id: String
     let name: String
     let address: String

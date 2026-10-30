@@ -1,3 +1,4 @@
+import FirebaseCore
 import FirebaseFirestore
 import Foundation
 import OSLog
@@ -95,7 +96,11 @@ struct FirestoreMasjidRepository: MasjidRepository {
                     }
                     let documents = snapshot?.documents ?? []
                     do {
-                        continuation.resume(returning: try documents.map { try ScheduleDayDTO.times(from: $0.data()) })
+                        continuation.resume(returning: try documents.map { document in
+                            let data = document.data()
+                            let updatedAt = (data[ScheduleDayDTO.Key.updatedAt] as? Timestamp)?.dateValue()
+                            return try ScheduleDayDTO.times(from: data, updatedAt: updatedAt)
+                        })
                     } catch {
                         continuation.resume(throwing: error)
                     }

@@ -36,6 +36,18 @@ struct MasjidDetailView: View {
         }
         .navigationTitle(viewModel.masjid.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if viewModel.canFavorite {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await viewModel.toggleFavorite() }
+                    } label: {
+                        Image(systemName: viewModel.isFavorite ? "star.fill" : "star")
+                    }
+                    .accessibilityLabel(viewModel.isFavorite ? "Remove from favorites" : "Add to favorites")
+                }
+            }
+        }
         .task {
             await viewModel.load()
         }
@@ -69,6 +81,11 @@ struct MasjidDetailView: View {
             }
             if let notice = viewModel.notice {
                 Label(notice, systemImage: "wifi.exclamationmark")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+            if let favoriteError = viewModel.favoriteError {
+                Label(favoriteError, systemImage: "star.slash")
                     .font(.footnote)
                     .foregroundStyle(.orange)
             }
@@ -127,6 +144,8 @@ struct MasjidDetailView: View {
         } footer: {
             if today.source == .calculated {
                 Text("This masjid hasn't published today's times. These are calculated for its location, without iqamah.")
+            } else if let lastUpdated = viewModel.lastUpdatedText {
+                Text("\(lastUpdated) Times are in \(viewModel.timeZone.identifier).")
             } else {
                 Text("Times are in \(viewModel.timeZone.identifier).")
             }

@@ -64,8 +64,11 @@ actor MockMasjidRepository: MasjidRepository {
         try throwInjectedError()
         publishCallCount += 1
         var schedule = schedules[masjidID] ?? [:]
+        let now = Date()
         for day in days {
-            schedule[day.day] = day
+            var stamped = day
+            stamped.updatedAt = now
+            schedule[day.day] = stamped
         }
         schedules[masjidID] = schedule
     }

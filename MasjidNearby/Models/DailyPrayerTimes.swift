@@ -39,6 +39,8 @@ struct DailyPrayerTimes: Sendable, Hashable, Codable {
     let maghrib: PrayerTime
     let isha: PrayerTime
     let source: PrayerTimeSource
+    /// When the masjid last published this day. Nil for calculated or unsaved times.
+    var updatedAt: Date? = nil
 
     subscript(prayer: Prayer) -> PrayerTime {
         switch prayer {

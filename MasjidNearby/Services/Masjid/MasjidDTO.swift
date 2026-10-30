@@ -110,7 +110,8 @@ enum ScheduleDayDTO {
         return data
     }
 
-    static func times(from data: [String: Any]) throws -> DailyPrayerTimes {
+    /// `updatedAt` comes from the document's server timestamp, which only the Firestore layer can read.
+    static func times(from data: [String: Any], updatedAt: Date? = nil) throws -> DailyPrayerTimes {
         guard let day = (data[Key.day] as? String).flatMap({ CalendarDay(key: $0) }) else {
             throw RepositoryError.invalidData("schedule day has no valid date")
         }
@@ -134,7 +135,8 @@ enum ScheduleDayDTO {
             asr: try prayerTime(.asr),
             maghrib: try prayerTime(.maghrib),
             isha: try prayerTime(.isha),
-            source: source
+            source: source,
+            updatedAt: updatedAt
         )
     }
 }

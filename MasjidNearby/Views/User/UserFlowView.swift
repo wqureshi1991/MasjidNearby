@@ -4,22 +4,47 @@ struct UserFlowView: View {
     @Bindable var coordinator: UserCoordinator
 
     var body: some View {
-        NavigationStack(path: $coordinator.path) {
-            NearbyMasjidsView(viewModel: coordinator.nearby)
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button(coordinator.session.isGuest ? "Exit" : "Sign Out") {
-                            Task { await coordinator.signOut() }
+        TabView(selection: $coordinator.selectedTab) {
+            NavigationStack(path: $coordinator.path) {
+                NearbyMasjidsView(viewModel: coordinator.nearby)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            signOutButton
                         }
                     }
-                }
-                .navigationDestination(for: UserCoordinator.Route.self) { route in
-                    switch route {
-                    case .masjidDetail(let masjid, let distanceMeters):
-                        MasjidDetailView(viewModel: coordinator.makeDetailViewModel(masjid: masjid,
-                                                                                    distanceMeters: distanceMeters))
+                    .navigationDestination(for: UserCoordinator.Route.self) { route in
+                        destination(for: route)
                     }
-                }
+            }
+            .tabItem {
+                Label("Nearby", systemImage: "location")
+            }
+            .tag(UserCoordinator.Tab.nearby)
+
+            NavigationStack(path: $coordinator.favoritesPath) {
+                FavoritesView(viewModel: coordinator.favorites)
+                    .navigationDestination(for: UserCoordinator.Route.self) { route in
+                        destination(for: route)
+                    }
+            }
+            .tabItem {
+                Label("Favorites", systemImage: "star")
+            }
+            .tag(UserCoordinator.Tab.favorites)
+        }
+    }
+
+    private var signOutButton: some View {
+        Button(coordinator.session.isGuest ? "Exit" : "Sign Out") {
+            Task { await coordinator.signOut() }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for route: UserCoordinator.Route) -> some View {
+        switch route {
+        case .masjidDetail(let masjid, let distanceMeters):
+            MasjidDetailView(viewModel: coordinator.makeDetailViewModel(masjid: masjid, distanceMeters: distanceMeters))
         }
     }
 }

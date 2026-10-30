@@ -8,17 +8,20 @@ struct AppDependencies: Sendable {
     let addressSearch: any AddressSearchService
     let locationService: any LocationService
     let prayerTimeCalculator: any PrayerTimeCalculator
+    let offlineStore: any OfflineStore
 
     init(authService: any AuthService,
          masjidRepository: any MasjidRepository = MockMasjidRepository(),
          addressSearch: any AddressSearchService = MockAddressSearchService(),
          locationService: any LocationService = MockLocationService(),
-         prayerTimeCalculator: any PrayerTimeCalculator = AstronomicalPrayerTimeCalculator()) {
+         prayerTimeCalculator: any PrayerTimeCalculator = AstronomicalPrayerTimeCalculator(),
+         offlineStore: any OfflineStore = InMemoryOfflineStore()) {
         self.authService = authService
         self.masjidRepository = masjidRepository
         self.addressSearch = addressSearch
         self.locationService = locationService
         self.prayerTimeCalculator = prayerTimeCalculator
+        self.offlineStore = offlineStore
     }
 
     @MainActor
@@ -30,14 +33,16 @@ struct AppDependencies: Sendable {
                 authService: MockAuthService(),
                 masjidRepository: DemoData.repository(),
                 addressSearch: MapKitAddressSearchService(),
-                locationService: CoreLocationService()
+                locationService: CoreLocationService(),
+                offlineStore: SwiftDataOfflineStore.makeDefault()
             )
         }
         return AppDependencies(
             authService: LiveAuthService(backend: FirebaseAuthBackend(), profiles: FirestoreUserProfileStore()),
             masjidRepository: FirestoreMasjidRepository(),
             addressSearch: MapKitAddressSearchService(),
-            locationService: CoreLocationService()
+            locationService: CoreLocationService(),
+            offlineStore: SwiftDataOfflineStore.makeDefault()
         )
     }
 }

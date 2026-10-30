@@ -66,7 +66,9 @@ enum DemoData {
             asr: prayer(times.asr, gap: 15),
             maghrib: prayer(times.maghrib, gap: 5),
             isha: prayer(times.isha, gap: 15),
-            source: .manual
+            source: .manual,
+            // Published a week ago, so "last updated" has something to show.
+            updatedAt: Date(timeIntervalSinceNow: -7 * 86_400)
         )
     }
 }
