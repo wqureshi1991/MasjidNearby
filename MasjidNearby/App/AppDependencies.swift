@@ -10,6 +10,8 @@ struct AppDependencies: Sendable {
     let prayerTimeCalculator: any PrayerTimeCalculator
     let offlineStore: any OfflineStore
     let textRecognizer: any TextRecognizer
+    let notificationScheduler: any NotificationScheduler
+    let alertSettingsStore: any PrayerAlertSettingsStore
 
     init(authService: any AuthService,
          masjidRepository: any MasjidRepository = MockMasjidRepository(),
@@ -17,7 +19,9 @@ struct AppDependencies: Sendable {
          locationService: any LocationService = MockLocationService(),
          prayerTimeCalculator: any PrayerTimeCalculator = AstronomicalPrayerTimeCalculator(),
          offlineStore: any OfflineStore = InMemoryOfflineStore(),
-         textRecognizer: any TextRecognizer = VisionTextRecognizer()) {
+         textRecognizer: any TextRecognizer = VisionTextRecognizer(),
+         notificationScheduler: any NotificationScheduler = MockNotificationScheduler(),
+         alertSettingsStore: any PrayerAlertSettingsStore = InMemoryPrayerAlertSettingsStore()) {
         self.authService = authService
         self.masjidRepository = masjidRepository
         self.addressSearch = addressSearch
@@ -25,6 +29,8 @@ struct AppDependencies: Sendable {
         self.prayerTimeCalculator = prayerTimeCalculator
         self.offlineStore = offlineStore
         self.textRecognizer = textRecognizer
+        self.notificationScheduler = notificationScheduler
+        self.alertSettingsStore = alertSettingsStore
     }
 
     @MainActor
@@ -37,7 +43,9 @@ struct AppDependencies: Sendable {
                 masjidRepository: DemoData.repository(),
                 addressSearch: MapKitAddressSearchService(),
                 locationService: CoreLocationService(),
-                offlineStore: SwiftDataOfflineStore.makeDefault()
+                offlineStore: SwiftDataOfflineStore.makeDefault(),
+                notificationScheduler: UserNotificationScheduler(),
+                alertSettingsStore: UserDefaultsPrayerAlertSettingsStore()
             )
         }
         return AppDependencies(
@@ -45,7 +53,9 @@ struct AppDependencies: Sendable {
             masjidRepository: FirestoreMasjidRepository(),
             addressSearch: MapKitAddressSearchService(),
             locationService: CoreLocationService(),
-            offlineStore: SwiftDataOfflineStore.makeDefault()
+            offlineStore: SwiftDataOfflineStore.makeDefault(),
+            notificationScheduler: UserNotificationScheduler(),
+            alertSettingsStore: UserDefaultsPrayerAlertSettingsStore()
         )
     }
 }

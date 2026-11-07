@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 
 @MainActor
 @Observable
@@ -11,6 +12,7 @@ final class UserCoordinator {
 
     enum Route: Hashable {
         case masjidDetail(Masjid, distanceMeters: Double?)
+        case prayerAlerts
     }
 
     var selectedTab: Tab = .nearby
@@ -24,6 +26,8 @@ final class UserCoordinator {
 
     private let dependencies: AppDependencies
     private let favoritesSync: FavoritesSync
+    private let alertSync: PrayerAlertSync
+    private static let logger = Logger(subsystem: "MasjidNearby", category: "PrayerAlerts")
     private let onSignOut: @MainActor () async -> Void
 
     init(session: AuthSession, dependencies: AppDependencies, onSignOut: @escaping @MainActor () async -> Void) {
@@ -32,6 +36,12 @@ final class UserCoordinator {
         self.onSignOut = onSignOut
         let sync = FavoritesSync(repository: dependencies.masjidRepository, store: dependencies.offlineStore)
         favoritesSync = sync
+        alertSync = PrayerAlertSync(
+            store: dependencies.offlineStore,
+            settings: dependencies.alertSettingsStore,
+            scheduler: dependencies.notificationScheduler,
+            calculator: dependencies.prayerTimeCalculator
+        )
         nearby = NearbyMasjidsViewModel(
             repository: dependencies.masjidRepository,
             locationService: dependencies.locationService,
@@ -43,6 +53,11 @@ final class UserCoordinator {
         }
         favorites.onSelect = { [weak self] masjid in
             self?.favoritesPath.append(.masjidDetail(masjid, distanceMeters: nil))
+        }
+        favorites.onFavoritesChanged = { [weak self] in
+            Task { [weak self] in
+                await self?.rescheduleAlerts()
+            }
         }
     }
 
@@ -61,8 +76,29 @@ final class UserCoordinator {
         viewModel.onFavoritesChanged = { [weak self] in
             Task { [weak self] in
                 await self?.favorites.load()
+                await self?.rescheduleAlerts()
             }
         }
         return viewModel
+    }
+
+    // MARK: - Prayer alerts
+
+    func showPrayerAlerts() {
+        favoritesPath.append(.prayerAlerts)
+    }
+
+    func makePrayerAlertsViewModel() -> PrayerAlertsViewModel {
+        PrayerAlertsViewModel(sync: alertSync)
+    }
+
+    /// Rebuilds pending alerts from favorites' saved times. Called when the app becomes
+    /// active and whenever favorites change, so alerts never run on stale schedules.
+    func rescheduleAlerts() async {
+        do {
+            try await alertSync.reschedule(now: Date())
+        } catch {
+            Self.logger.error("Couldn't reschedule alerts: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

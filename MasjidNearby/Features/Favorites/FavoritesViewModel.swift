@@ -21,6 +21,8 @@ final class FavoritesViewModel {
     private(set) var refreshMessage: String? = nil
 
     @ObservationIgnored var onSelect: (@MainActor (Masjid) -> Void)?
+    /// Called after favorites are removed or their schedules refreshed.
+    @ObservationIgnored var onFavoritesChanged: (@MainActor () -> Void)?
 
     private let sync: FavoritesSync
     private let resolver: PrayerTimeResolver
@@ -62,6 +64,7 @@ final class FavoritesViewModel {
             refreshMessage = "Couldn't update favorites: \(error.localizedDescription)"
         }
         await load()
+        onFavoritesChanged?()
     }
 
     func remove(_ item: Item) async {
@@ -71,6 +74,7 @@ final class FavoritesViewModel {
             refreshMessage = "Couldn't remove \(item.masjid.name): \(error.localizedDescription)"
         }
         await load()
+        onFavoritesChanged?()
     }
 
     func select(_ item: Item) {
