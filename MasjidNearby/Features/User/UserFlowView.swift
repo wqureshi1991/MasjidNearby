@@ -11,11 +11,11 @@ struct UserFlowView: View {
                     NearbyMasjidsView(viewModel: coordinator.nearby)
                         .toolbar {
                             ToolbarItem(placement: .topBarLeading) {
-                                signOutButton
+                                SignOutButton(coordinator: coordinator)
                             }
                         }
                         .navigationDestination(for: UserCoordinator.Route.self) { route in
-                            destination(for: route)
+                            UserRouteDestination(route: route, coordinator: coordinator)
                         }
                 }
             }
@@ -32,7 +32,7 @@ struct UserFlowView: View {
                             }
                         }
                         .navigationDestination(for: UserCoordinator.Route.self) { route in
-                            destination(for: route)
+                            UserRouteDestination(route: route, coordinator: coordinator)
                         }
                 }
             }
@@ -40,22 +40,6 @@ struct UserFlowView: View {
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
             Task { await coordinator.rescheduleAlerts() }
-        }
-    }
-
-    private var signOutButton: some View {
-        Button(coordinator.session.isGuest ? "Exit" : "Sign Out") {
-            Task { await coordinator.signOut() }
-        }
-    }
-
-    @ViewBuilder
-    private func destination(for route: UserCoordinator.Route) -> some View {
-        switch route {
-        case .masjidDetail(let masjid, let distanceMeters):
-            MasjidDetailView(viewModel: coordinator.makeDetailViewModel(masjid: masjid, distanceMeters: distanceMeters))
-        case .prayerAlerts:
-            PrayerAlertsView(viewModel: coordinator.makePrayerAlertsViewModel())
         }
     }
 }

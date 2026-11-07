@@ -93,6 +93,33 @@ final class ScheduleEditorViewModel {
         return .calculated
     }
 
+    /// The selected day as midday UTC, for a date picker shown in UTC, so it shows the
+    /// same calendar day in every time zone.
+    var selectedDate: Date {
+        get { selectedDay.startOfDayUTC.addingTimeInterval(12 * 3_600) }
+        set { selectedDay = CalendarDay(date: newValue, in: .gmt) }
+    }
+
+    var selectableDates: ClosedRange<Date> {
+        firstDay.startOfDayUTC...lastDay.startOfDayUTC.addingTimeInterval(23 * 3_600)
+    }
+
+    var statusText: String {
+        switch selectedDayStatus {
+        case .published: "Published"
+        case .calculated: "Calculated. Not yet published."
+        case .edited: "Edited. Not yet published."
+        }
+    }
+
+    var statusSymbol: String {
+        switch selectedDayStatus {
+        case .published: "checkmark.circle"
+        case .calculated: "function"
+        case .edited: "pencil.circle"
+        }
+    }
+
     var issues: [ScheduleIssue] {
         ScheduleValidator.issues(in: editingDay.dailyTimes(on: selectedDay))
     }
@@ -126,6 +153,19 @@ final class ScheduleEditorViewModel {
 
     var canPublish: Bool {
         !drafts.isEmpty && daysWithIssues == 0 && !publishState.isLoading
+    }
+
+    var publishTitle: String {
+        switch editedDayCount {
+        case 0: "Nothing to Publish"
+        case 1: "Publish 1 Day"
+        default: "Publish \(editedDayCount) Days"
+        }
+    }
+
+    var publishFooter: String? {
+        guard daysWithIssues > 0 else { return nil }
+        return "Fix the problems on \(daysWithIssues) edited \(daysWithIssues == 1 ? "day" : "days") before publishing."
     }
 
     func load() async {

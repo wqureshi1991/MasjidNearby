@@ -108,6 +108,32 @@ final class TimetableScanViewModel {
         includedCount > 0 && daysWithIssues == 0 && !publishState.isLoading && !scanState.isLoading
     }
 
+    var photoPickerTitle: String {
+        hasResults ? "Choose a Different Photo" : "Choose Timetable Photo"
+    }
+
+    var settingsFooter: String {
+        "Found \(days.count) of \(dayCountInMonth) days. Changing the month or columns reads the photo again and discards your edits."
+    }
+
+    var daysFooter: String {
+        guard reviewCount > 0 else { return "Tap any day to correct it." }
+        return "Tap the \(reviewCount) marked \(reviewCount == 1 ? "day" : "days") to check them against the timetable."
+    }
+
+    var publishTitle: String {
+        switch includedCount {
+        case 0: "Nothing to Publish"
+        case 1: "Publish 1 Day"
+        default: "Publish \(includedCount) Days"
+        }
+    }
+
+    var publishFooter: String? {
+        guard daysWithIssues > 0 else { return nil }
+        return "Fix the problems on \(daysWithIssues) \(daysWithIssues == 1 ? "day" : "days"), or switch them off, before publishing."
+    }
+
     // MARK: - Actions
 
     /// Loads what's already published for these months, the starting point for scanned days.

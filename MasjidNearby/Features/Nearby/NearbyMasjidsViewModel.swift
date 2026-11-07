@@ -33,6 +33,16 @@ final class NearbyMasjidsViewModel {
     /// Where the current results are measured from, e.g. "Near you".
     private(set) var originDescription: String? = nil
     private(set) var isLocationDenied = false
+
+    var idleMessage: String {
+        isLocationDenied
+            ? "Location access is off. Search for a city or address above, or allow location in Settings."
+            : "Use your location, or search for a city or address."
+    }
+
+    var emptyMessage: String {
+        "No verified masjids within \(Int(Self.searchRadiusMeters / 1_000)) km. Try searching another city."
+    }
     var searchText = ""
     var displayMode: DisplayMode = .list
 

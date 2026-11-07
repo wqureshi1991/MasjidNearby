@@ -138,6 +138,28 @@ final class MasjidDetailViewModel {
         return time.instant(on: day, in: timeZone).formatted(style)
     }
 
+    /// "5:42 AM" for an instant, in the masjid's time zone and the user's locale.
+    func formatted(_ date: Date) -> String {
+        var style = Date.FormatStyle(date: .omitted, time: .shortened)
+        style.timeZone = timeZone
+        return date.formatted(style)
+    }
+
+    /// Whether `prayer` is the next one today, so the schedule can highlight it.
+    func isNext(_ prayer: Prayer, upcoming: UpcomingPrayer?) -> Bool {
+        guard let upcoming, !upcoming.isTomorrow else { return false }
+        return upcoming.prayer == prayer
+    }
+
+    func todayFooter(for today: DailyPrayerTimes) -> String {
+        if today.source == .calculated {
+            return "This masjid hasn't published today's times. These are calculated for its location, without iqamah."
+        }
+        let zone = "Times are in \(timeZone.identifier)."
+        guard let lastUpdated = lastUpdatedText else { return zone }
+        return "\(lastUpdated) \(zone)"
+    }
+
     /// "Updated by the masjid 3 days ago", for published times that carry a timestamp.
     var lastUpdatedText: String? {
         guard let schedule, schedule.today.source != .calculated, let updatedAt = schedule.today.updatedAt else {

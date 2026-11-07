@@ -12,7 +12,7 @@ struct NearbyMasjidsView: View {
             .pickerStyle(.segmented)
             .padding(.horizontal)
 
-            content
+            NearbyMasjidsContent(viewModel: viewModel)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("Masjids")
@@ -31,74 +31,6 @@ struct NearbyMasjidsView: View {
         }
         .task {
             await viewModel.loadIfNeeded()
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch viewModel.state {
-        case .idle:
-            ContentUnavailableView {
-                Label("Find Masjids", systemImage: "location.magnifyingglass")
-            } description: {
-                Text(viewModel.isLocationDenied
-                     ? "Location access is off. Search for a city or address above, or allow location in Settings."
-                     : "Use your location, or search for a city or address.")
-            } actions: {
-                if !viewModel.isLocationDenied {
-                    Button("Use My Location") {
-                        Task { await viewModel.loadNearCurrentLocation() }
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-        case .loading:
-            ProgressView("Finding masjids…")
-        case .failed(let error):
-            ContentUnavailableView {
-                Label("Couldn't Load Masjids", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(error.localizedDescription)
-            } actions: {
-                Button("Try Again") {
-                    Task { await viewModel.loadNearCurrentLocation() }
-                }
-            }
-        case .loaded(let items) where items.isEmpty:
-            ContentUnavailableView {
-                Label("No Masjids Nearby", systemImage: "building.columns")
-            } description: {
-                Text("No verified masjids within \(Int(NearbyMasjidsViewModel.searchRadiusMeters / 1_000)) km. Try searching another city.")
-            }
-        case .loaded(let items):
-            switch viewModel.displayMode {
-            case .list:
-                list(of: items)
-            case .map:
-                NearbyMapView(items: items) { viewModel.select($0) }
-            }
-        }
-    }
-
-    private func list(of items: [NearbyMasjidsViewModel.Item]) -> some View {
-        List {
-            Section {
-                ForEach(items) { item in
-                    Button {
-                        viewModel.select(item)
-                    } label: {
-                        MasjidRow(item: item)
-                    }
-                    .foregroundStyle(.primary)
-                }
-            } header: {
-                if let origin = viewModel.originDescription {
-                    Text(origin)
-                }
-            }
-        }
-        .refreshable {
-            await viewModel.loadNearCurrentLocation()
         }
     }
 }
