@@ -7,7 +7,7 @@ struct FavoriteRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading) {
                 Text(item.masjid.name)
                     .font(.headline)
                 if let synced = item.lastSyncedAt {
@@ -22,7 +22,7 @@ struct FavoriteRow: View {
             }
             Spacer()
             if let upcoming {
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing) {
                     Text(upcoming.prayer.displayName)
                         .font(.subheadline.bold())
                     Text(formatted(upcoming.adhan))

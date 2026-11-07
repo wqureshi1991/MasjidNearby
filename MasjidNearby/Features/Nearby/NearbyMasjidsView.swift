@@ -4,14 +4,13 @@ struct NearbyMasjidsView: View {
     @Bindable var viewModel: NearbyMasjidsViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack {
             Picker("View", selection: $viewModel.displayMode) {
                 Text("List").tag(NearbyMasjidsViewModel.DisplayMode.list)
                 Text("Map").tag(NearbyMasjidsViewModel.DisplayMode.map)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal)
-            .padding(.bottom, 8)
 
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -23,12 +22,10 @@ struct NearbyMasjidsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
+                Button("Use my location", systemImage: "location") {
                     Task { await viewModel.loadNearCurrentLocation() }
-                } label: {
-                    Image(systemName: "location")
                 }
-                .accessibilityLabel("Use my location")
+                .labelStyle(.iconOnly)
                 .disabled(viewModel.state.isLoading)
             }
         }

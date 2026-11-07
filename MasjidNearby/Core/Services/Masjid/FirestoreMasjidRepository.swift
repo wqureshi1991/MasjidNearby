@@ -8,7 +8,7 @@ import OSLog
 struct FirestoreMasjidRepository: MasjidRepository {
     /// Firestore never calls a write's completion while offline: the write is queued and
     /// uploaded on reconnect. Stop waiting after this long and treat the write as saved.
-    private static let writeTimeout: TimeInterval = 15
+    private static let writeTimeout: Duration = .seconds(15)
     private static let logger = Logger(subsystem: "com.waqarqureshi.MasjidNearby", category: "MasjidRepository")
 
     func masjid(administeredBy adminUID: String) async throws -> Masjid? {
@@ -174,16 +174,18 @@ struct FirestoreMasjidRepository: MasjidRepository {
     private static func write(_ start: (@escaping @Sendable ((any Error)?) -> Void) -> Void) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             let once = ResumeOnce(continuation)
+            let timeout = Task {
+                try await Task.sleep(for: Self.writeTimeout)
+                if once.resume(returning: ()) {
+                    Self.logger.notice("Write not confirmed in time; Firestore will upload it when online.")
+                }
+            }
             start { error in
+                timeout.cancel()
                 if let error {
                     once.resume(throwing: Self.map(error))
                 } else {
                     once.resume(returning: ())
-                }
-            }
-            DispatchQueue.global().asyncAfter(deadline: .now() + Self.writeTimeout) {
-                if once.resume(returning: ()) {
-                    Self.logger.notice("Write not confirmed in time; Firestore will upload it when online.")
                 }
             }
         }

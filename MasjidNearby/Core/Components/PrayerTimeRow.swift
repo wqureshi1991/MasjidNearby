@@ -7,13 +7,12 @@ struct PrayerTimeRow: View {
     let timeZone: TimeZone
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading) {
             TimeField(title: "\(title) adhan", time: $prayer.adhan, timeZone: timeZone)
             Toggle("Iqamah", isOn: $prayer.hasIqamah)
             if prayer.hasIqamah {
                 TimeField(title: "\(title) iqamah", time: $prayer.iqamah, timeZone: timeZone)
             }
         }
-        .padding(.vertical, 4)
     }
 }

@@ -9,7 +9,7 @@ struct PrayerScheduleRow: View {
     var body: some View {
         HStack {
             Text(name)
-                .fontWeight(isNext ? .bold : .regular)
+                .bold(isNext)
             Spacer()
             Text(viewModel.formatted(time.adhan))
                 .monospacedDigit()

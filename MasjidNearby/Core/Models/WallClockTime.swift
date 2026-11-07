@@ -67,7 +67,7 @@ struct WallClockTime: Sendable, Hashable, Comparable, CustomStringConvertible {
 
     /// "HH:mm". This is the stored format.
     var description: String {
-        String(format: "%02d:%02d", hour, minute)
+        "\(hour.zeroPadded(to: 2)):\(minute.zeroPadded(to: 2))"
     }
 
     /// The instant this time occurs on `day` in `timeZone`.

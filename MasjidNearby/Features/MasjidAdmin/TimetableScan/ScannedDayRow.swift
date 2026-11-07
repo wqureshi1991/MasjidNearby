@@ -7,7 +7,7 @@ struct ScannedDayRow: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading) {
                 Text(title)
                     .font(.headline)
                 Text(Prayer.allCases.map { day.times[$0].adhan.description }.joined(separator: "  "))

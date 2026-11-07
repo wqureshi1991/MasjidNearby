@@ -9,11 +9,12 @@ struct WelcomeView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack {
             Spacer()
 
             Image(systemName: "building.columns")
-                .font(.system(size: 56))
+                .font(.largeTitle)
+                .imageScale(.large)
                 .foregroundStyle(.tint)
                 .accessibilityHidden(true)
             Text("Masjid Nearby")
@@ -23,7 +24,7 @@ struct WelcomeView: View {
 
             Spacer()
 
-            VStack(spacing: 12) {
+            VStack {
                 Button {
                     Task { await viewModel.continueAsGuest() }
                 } label: {
@@ -58,7 +59,7 @@ struct WelcomeView: View {
                 Button("I manage a masjid") {
                     viewModel.signIn(as: .masjidAdmin)
                 }
-                .padding(.top, 8)
+                .padding(.top)
             }
         }
         .padding()

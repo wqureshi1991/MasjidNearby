@@ -33,13 +33,11 @@ struct ScheduleEditorView: View {
     private var daySection: some View {
         Section {
             HStack {
-                Button {
+                Button("Previous day", systemImage: "chevron.left") {
                     viewModel.goToPreviousDay()
-                } label: {
-                    Image(systemName: "chevron.left")
                 }
+                .labelStyle(.iconOnly)
                 .disabled(!viewModel.canGoBack)
-                .accessibilityLabel("Previous day")
 
                 Spacer()
                 DatePicker("Day", selection: daySelection, in: dayRange, displayedComponents: .date)
@@ -47,13 +45,11 @@ struct ScheduleEditorView: View {
                     .environment(\.timeZone, .gmt)
                 Spacer()
 
-                Button {
+                Button("Next day", systemImage: "chevron.right") {
                     viewModel.goToNextDay()
-                } label: {
-                    Image(systemName: "chevron.right")
                 }
+                .labelStyle(.iconOnly)
                 .disabled(!viewModel.canGoForward)
-                .accessibilityLabel("Next day")
             }
             .buttonStyle(.borderless)
 

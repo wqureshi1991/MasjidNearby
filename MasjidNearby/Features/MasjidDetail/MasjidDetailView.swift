@@ -39,12 +39,11 @@ struct MasjidDetailView: View {
         .toolbar {
             if viewModel.canFavorite {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    Button(viewModel.isFavorite ? "Remove from favorites" : "Add to favorites",
+                           systemImage: viewModel.isFavorite ? "star.fill" : "star") {
                         Task { await viewModel.toggleFavorite() }
-                    } label: {
-                        Image(systemName: viewModel.isFavorite ? "star.fill" : "star")
                     }
-                    .accessibilityLabel(viewModel.isFavorite ? "Remove from favorites" : "Add to favorites")
+                    .labelStyle(.iconOnly)
                 }
             }
         }
@@ -63,7 +62,7 @@ struct MasjidDetailView: View {
 
     private var headerSection: some View {
         Section {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading) {
                 Text(viewModel.masjid.name)
                     .font(.title3.bold())
                 Text(viewModel.masjid.address)
@@ -97,14 +96,14 @@ struct MasjidDetailView: View {
         if let upcoming {
             Section("Next Prayer") {
                 HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading) {
                         Text(upcoming.isTomorrow ? "\(upcoming.prayer.displayName) (tomorrow)" : upcoming.prayer.displayName)
                             .font(.title2.bold())
                         Text(upcoming.adhan, style: .relative)
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
+                    VStack(alignment: .trailing) {
                         Text(format(upcoming.adhan))
                             .font(.title2.monospacedDigit())
                         if let iqamah = upcoming.iqamah {

@@ -5,32 +5,28 @@ struct UserFlowView: View {
 
     var body: some View {
         TabView(selection: $coordinator.selectedTab) {
-            NavigationStack(path: $coordinator.path) {
-                NearbyMasjidsView(viewModel: coordinator.nearby)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            signOutButton
+            Tab("Nearby", systemImage: "location", value: UserCoordinator.Tab.nearby) {
+                NavigationStack(path: $coordinator.path) {
+                    NearbyMasjidsView(viewModel: coordinator.nearby)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                signOutButton
+                            }
                         }
-                    }
-                    .navigationDestination(for: UserCoordinator.Route.self) { route in
-                        destination(for: route)
-                    }
+                        .navigationDestination(for: UserCoordinator.Route.self) { route in
+                            destination(for: route)
+                        }
+                }
             }
-            .tabItem {
-                Label("Nearby", systemImage: "location")
-            }
-            .tag(UserCoordinator.Tab.nearby)
 
-            NavigationStack(path: $coordinator.favoritesPath) {
-                FavoritesView(viewModel: coordinator.favorites)
-                    .navigationDestination(for: UserCoordinator.Route.self) { route in
-                        destination(for: route)
-                    }
+            Tab("Favorites", systemImage: "star", value: UserCoordinator.Tab.favorites) {
+                NavigationStack(path: $coordinator.favoritesPath) {
+                    FavoritesView(viewModel: coordinator.favorites)
+                        .navigationDestination(for: UserCoordinator.Route.self) { route in
+                            destination(for: route)
+                        }
+                }
             }
-            .tabItem {
-                Label("Favorites", systemImage: "star")
-            }
-            .tag(UserCoordinator.Tab.favorites)
         }
     }
 

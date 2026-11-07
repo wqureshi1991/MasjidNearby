@@ -5,7 +5,7 @@ struct MasjidRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading) {
                 Text(item.masjid.name)
                     .font(.headline)
                 Text(item.masjid.address)

@@ -26,7 +26,7 @@ struct AdminHomeView: View {
                 }
             case .loaded(.some(let masjid)):
                 Section("Masjid") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading) {
                         Text(masjid.name)
                             .font(.headline)
                         Text(masjid.address)

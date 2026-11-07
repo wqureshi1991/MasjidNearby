@@ -54,7 +54,7 @@ struct TimetableScanView: View {
             .disabled(viewModel.scanState.isLoading)
 
             if viewModel.scanState.isLoading {
-                HStack(spacing: 12) {
+                HStack {
                     ProgressView()
                     Text("Reading the timetable…")
                         .foregroundStyle(.secondary)

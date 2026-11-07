@@ -76,7 +76,7 @@ struct MasjidFormView: View {
 
             Section {
                 ForEach($viewModel.draft.jumuah) { $slot in
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading) {
                         TimeField(title: "Khutbah", time: $slot.khutbah, timeZone: formTimeZone)
                         Toggle("Iqamah", isOn: $slot.hasIqamah)
                         if slot.hasIqamah {

@@ -50,7 +50,7 @@ struct CalendarDay: Sendable, Hashable, Comparable, CustomStringConvertible {
 
     /// "yyyy-MM-dd". Used as the Firestore document ID for a day's schedule.
     var key: String {
-        String(format: "%04d-%02d-%02d", year, month, day)
+        "\(year.zeroPadded(to: 4))-\(month.zeroPadded(to: 2))-\(day.zeroPadded(to: 2))"
     }
 
     var description: String { key }
