@@ -10,6 +10,8 @@ struct PrayerNotification: Sendable, Equatable, Identifiable {
     /// Every prayer alert's identifier starts with this, so they can be replaced without
     /// touching any other notification.
     static let identifierPrefix = "prayer-alert."
+    /// The `userInfo` key holding the masjid's ID, so a tapped alert can open it.
+    static let masjidIDKey = "masjidID"
 
     let masjidID: String
     let masjidName: String

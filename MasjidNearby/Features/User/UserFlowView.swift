@@ -37,6 +37,10 @@ struct UserFlowView: View {
                 }
             }
         }
+        .onChange(of: coordinator.alertTaps.pendingMasjidID, initial: true) { _, masjidID in
+            guard masjidID != nil else { return }
+            Task { await coordinator.openPendingAlert() }
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
             Task { await coordinator.rescheduleAlerts() }

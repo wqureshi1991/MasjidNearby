@@ -6,14 +6,16 @@ struct MasjidNearbyApp: App {
     @State private var coordinator: AppCoordinator
     @Environment(\.scenePhase) private var scenePhase
     /// Held for the app's lifetime: the notification center keeps only a weak reference.
-    private let notificationPresenter = NotificationPresenter()
+    private let notificationPresenter: NotificationPresenter
     private let backgroundRefresh: BackgroundRefresh
 
     init() {
         let firebaseConfigured = FirebaseBootstrap.configureIfAvailable()
         let dependencies = AppDependencies.makeDefault(firebaseConfigured: firebaseConfigured)
+        let alertTaps = AlertTapRouter()
+        notificationPresenter = NotificationPresenter(router: alertTaps)
         backgroundRefresh = BackgroundRefresh(dependencies: dependencies)
-        _coordinator = State(initialValue: AppCoordinator(dependencies: dependencies))
+        _coordinator = State(initialValue: AppCoordinator(dependencies: dependencies, alertTaps: alertTaps))
         UNUserNotificationCenter.current().delegate = notificationPresenter
     }
 

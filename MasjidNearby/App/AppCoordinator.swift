@@ -7,12 +7,14 @@ final class AppCoordinator {
     private(set) var flow: AppFlow = .launching
 
     private let dependencies: AppDependencies
+    private let alertTaps: AlertTapRouter
     @ObservationIgnored private var currentSession: AuthSession?
     @ObservationIgnored private var isObservingAuth = false
     private let logger = Logger(subsystem: "com.waqarqureshi.MasjidNearby", category: "AppCoordinator")
 
-    init(dependencies: AppDependencies) {
+    init(dependencies: AppDependencies, alertTaps: AlertTapRouter? = nil) {
         self.dependencies = dependencies
+        self.alertTaps = alertTaps ?? AlertTapRouter()
     }
 
     /// Call from `.task`. Runs until the task is cancelled; re-entrant calls are ignored.
@@ -54,7 +56,8 @@ final class AppCoordinator {
         }
         switch session.role {
         case .user:
-            return .user(UserCoordinator(session: session, dependencies: dependencies, onSignOut: onSignOut))
+            return .user(UserCoordinator(session: session, dependencies: dependencies,
+                                         alertTaps: alertTaps, onSignOut: onSignOut))
         case .masjidAdmin:
             return .masjidAdmin(MasjidAdminCoordinator(session: session, dependencies: dependencies, onSignOut: onSignOut))
         }

@@ -23,6 +23,8 @@ final class UserCoordinator {
     /// Root ViewModels, kept for the life of the flow so they survive navigation and tab switches.
     let nearby: NearbyMasjidsViewModel
     let favorites: FavoritesViewModel
+    /// Tapped prayer alerts waiting to be opened.
+    let alertTaps: AlertTapRouter
 
     private let dependencies: AppDependencies
     private let favoritesSync: FavoritesSync
@@ -30,8 +32,12 @@ final class UserCoordinator {
     private static let logger = Logger(subsystem: "MasjidNearby", category: "PrayerAlerts")
     private let onSignOut: @MainActor () async -> Void
 
-    init(session: AuthSession, dependencies: AppDependencies, onSignOut: @escaping @MainActor () async -> Void) {
+    init(session: AuthSession,
+         dependencies: AppDependencies,
+         alertTaps: AlertTapRouter? = nil,
+         onSignOut: @escaping @MainActor () async -> Void) {
         self.session = session
+        self.alertTaps = alertTaps ?? AlertTapRouter()
         self.dependencies = dependencies
         self.onSignOut = onSignOut
         let sync = FavoritesSync(repository: dependencies.masjidRepository, store: dependencies.offlineStore)
@@ -90,6 +96,21 @@ final class UserCoordinator {
 
     func makePrayerAlertsViewModel() -> PrayerAlertsViewModel {
         PrayerAlertsViewModel(sync: alertSync)
+    }
+
+    /// Opens the masjid of a tapped prayer alert on the Favorites tab. Alerts are only for
+    /// favorites, so a masjid removed since the alert was scheduled is ignored.
+    func openPendingAlert() async {
+        guard let masjidID = alertTaps.takePendingMasjidID() else { return }
+        do {
+            guard let favorite = try await dependencies.offlineStore.favorites().first(where: { $0.id == masjidID }) else {
+                return
+            }
+            selectedTab = .favorites
+            favoritesPath = [.masjidDetail(favorite.masjid, distanceMeters: nil)]
+        } catch {
+            Self.logger.error("Couldn't open alert's masjid: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     /// Rebuilds pending alerts from favorites' saved times. Called when the app becomes

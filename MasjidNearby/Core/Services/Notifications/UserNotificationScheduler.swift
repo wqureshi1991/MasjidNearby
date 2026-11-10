@@ -38,6 +38,7 @@ struct UserNotificationScheduler: NotificationScheduler {
         content.body = notification.body
         content.sound = .default
         content.threadIdentifier = notification.masjidID
+        content.userInfo = [PrayerNotification.masjidIDKey: notification.masjidID]
 
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = notification.timeZone
