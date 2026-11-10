@@ -3,8 +3,11 @@ import FirebaseFirestore
 import Foundation
 import OSLog
 
-/// The only masjid type that talks to Firestore. Like the auth wrappers, it uses
-/// completion-handler APIs and hands back plain `Sendable` values.
+/// The only masjid type that talks to Firestore. Firestore's snapshots and references are not
+/// `Sendable`, so they never leave this file: every call hands back plain `Sendable` values.
+///
+/// Reads use Firestore's async APIs. Writes use the completion-handler APIs on purpose: offline,
+/// Firestore queues a write and never completes it, so an `await` would hang forever. See `write`.
 struct FirestoreMasjidRepository: MasjidRepository {
     /// Firestore never calls a write's completion while offline: the write is queued and
     /// uploaded on reconnect. Stop waiting after this long and treat the write as saved.
@@ -12,26 +15,13 @@ struct FirestoreMasjidRepository: MasjidRepository {
     private static let logger = Logger(subsystem: "com.waqarqureshi.MasjidNearby", category: "MasjidRepository")
 
     func masjid(administeredBy adminUID: String) async throws -> Masjid? {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Masjid?, any Error>) in
-            Self.masjids
+        let snapshot = try await Self.documents(
+            matching: Self.masjids
                 .whereField(MasjidDTO.Key.adminUIDs, arrayContains: adminUID)
                 .limit(to: 1)
-                .getDocuments { snapshot, error in
-                    if let error {
-                        continuation.resume(throwing: Self.map(error))
-                        return
-                    }
-                    guard let document = snapshot?.documents.first else {
-                        continuation.resume(returning: nil)
-                        return
-                    }
-                    do {
-                        continuation.resume(returning: try MasjidDTO.masjid(id: document.documentID, data: document.data()))
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
-        }
+        )
+        guard let document = snapshot.documents.first else { return nil }
+        return try MasjidDTO.masjid(id: document.documentID, data: document.data())
     }
 
     func createMasjid(from draft: MasjidDraft, adminUID: String) async throws -> Masjid {
@@ -85,26 +75,15 @@ struct FirestoreMasjidRepository: MasjidRepository {
     }
 
     func schedule(masjidID: String, from start: CalendarDay, through end: CalendarDay) async throws -> [DailyPrayerTimes] {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[DailyPrayerTimes], any Error>) in
-            Self.schedule(of: masjidID)
+        let snapshot = try await Self.documents(
+            matching: Self.schedule(of: masjidID)
                 .whereField(ScheduleDayDTO.Key.day, isGreaterThanOrEqualTo: start.key)
                 .whereField(ScheduleDayDTO.Key.day, isLessThanOrEqualTo: end.key)
-                .getDocuments { snapshot, error in
-                    if let error {
-                        continuation.resume(throwing: Self.map(error))
-                        return
-                    }
-                    let documents = snapshot?.documents ?? []
-                    do {
-                        continuation.resume(returning: try documents.map { document in
-                            let data = document.data()
-                            let updatedAt = (data[ScheduleDayDTO.Key.updatedAt] as? Timestamp)?.dateValue()
-                            return try ScheduleDayDTO.times(from: data, updatedAt: updatedAt)
-                        })
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
+        )
+        return try snapshot.documents.map { document in
+            let data = document.data()
+            let updatedAt = (data[ScheduleDayDTO.Key.updatedAt] as? Timestamp)?.dateValue()
+            return try ScheduleDayDTO.times(from: data, updatedAt: updatedAt)
         }
     }
 
@@ -136,28 +115,30 @@ struct FirestoreMasjidRepository: MasjidRepository {
     }
 
     private static func verifiedMasjids(withGeohashPrefix prefix: String) async throws -> [Masjid] {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[Masjid], any Error>) in
-            masjids
+        let snapshot = try await documents(
+            matching: masjids
                 .whereField(MasjidDTO.Key.verified, isEqualTo: true)
                 .whereField(MasjidDTO.Key.geohash, isGreaterThanOrEqualTo: prefix)
                 // "~" sorts after every geohash character, so this is "starts with prefix".
                 .whereField(MasjidDTO.Key.geohash, isLessThanOrEqualTo: prefix + "~")
-                .getDocuments { snapshot, error in
-                    if let error {
-                        continuation.resume(throwing: Self.map(error))
-                        return
-                    }
-                    var found: [Masjid] = []
-                    for document in snapshot?.documents ?? [] {
-                        do {
-                            found.append(try MasjidDTO.masjid(id: document.documentID, data: document.data()))
-                        } catch {
-                            // One malformed masjid shouldn't hide the others.
-                            Self.logger.error("Skipping masjid \(document.documentID, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                        }
-                    }
-                    continuation.resume(returning: found)
-                }
+        )
+        var found: [Masjid] = []
+        for document in snapshot.documents {
+            do {
+                found.append(try MasjidDTO.masjid(id: document.documentID, data: document.data()))
+            } catch {
+                // One malformed masjid shouldn't hide the others.
+                logger.error("Skipping masjid \(document.documentID, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        return found
+    }
+
+    private static func documents(matching query: Query) async throws -> QuerySnapshot {
+        do {
+            return try await query.getDocuments()
+        } catch {
+            throw map(error)
         }
     }
 
@@ -171,6 +152,10 @@ struct FirestoreMasjidRepository: MasjidRepository {
     }
 
     /// Starts a write and waits for the server to confirm it, or for `writeTimeout`.
+    ///
+    /// This stays on the completion-handler API: while offline Firestore never calls the
+    /// completion, and a structured race (a task group with a timeout child) would still wait for
+    /// the stuck write before returning. `ResumeOnce` lets the timeout resume the caller instead.
     private static func write(_ start: (@escaping @Sendable ((any Error)?) -> Void) -> Void) async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             let once = ResumeOnce(continuation)
