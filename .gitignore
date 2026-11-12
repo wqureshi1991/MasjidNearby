@@ -5,3 +5,7 @@ DerivedData/
 build/
 # Firebase config is per-environment; keep it out of git
 GoogleService-Info*.plist
+
+# Firestore rules tests
+node_modules/
+firestore-debug.log
